@@ -1,5 +1,10 @@
 package com.jayanslow.projection.texture.editor.views;
 
+import static com.jayanslow.utils.swing.JButtonHelpers.createButton;
+import static com.jayanslow.utils.swing.JLabelHelpers.createLabel;
+import static com.jayanslow.utils.swing.JSpinnerHelpers.createSpinner;
+import static com.jayanslow.utils.swing.JSpinnerHelpers.getSpinnerValue;
+
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -7,13 +12,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import com.jayanslow.projection.texture.controllers.TextureController;
 import com.jayanslow.projection.texture.editor.controller.TextureEditorController;
@@ -21,8 +30,12 @@ import com.jayanslow.projection.texture.editor.models.MappingsTableModel;
 import com.jayanslow.projection.texture.listeners.TextureListener;
 import com.jayanslow.projection.texture.models.Texture;
 import com.jayanslow.projection.texture.models.TextureMapping;
+import com.jgoodies.forms.factories.FormFactory;
+import com.jgoodies.forms.layout.ColumnSpec;
+import com.jgoodies.forms.layout.FormLayout;
+import com.jgoodies.forms.layout.RowSpec;
 
-public class TextureMappingsFrame extends JFrame implements ActionListener, TextureListener {
+public class TextureMappingsFrame extends JFrame implements ActionListener, TextureListener, ChangeListener {
 
 	private static final long				serialVersionUID	= -4597857118664782627L;
 
@@ -31,15 +44,23 @@ public class TextureMappingsFrame extends JFrame implements ActionListener, Text
 	private static final String				COMMAND_REMOVE		= "remove";
 	private static final String				COMMAND_REFRESH		= "refresh";
 	private static final String				COMMAND_MOVE		= "move";
+	private static final String				COMMAND_START		= "start";
+	private static final String				COMMAND_END			= "end";
 
 	private final JPanel					contentPane;
-
-	private final JButton					btnAdd, btnEdit, btnMove, btnRefresh, btnRemove;
 
 	private final TextureController			textures;
 	private final TextureEditorController	controller;
 
 	private final JTable					tableMappings;
+
+	private JSpinner						spinnerFrame;
+
+	private JPanel							panelProperties;
+	private JTextField						textMaximum;
+
+	private boolean							live				= true;
+	private JPanel							panelJump;
 
 	/**
 	 * Create the frame.
@@ -48,30 +69,52 @@ public class TextureMappingsFrame extends JFrame implements ActionListener, Text
 		this.controller = controller;
 		this.textures = textures;
 
+		textures.addTextureListener(this);
+
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
 
+		// Panels
 		JPanel panelControls = new JPanel();
+		createButton("Add", panelControls, null, this, COMMAND_ADD);
+		createButton("Edit", panelControls, null, this, COMMAND_EDIT);
+		createButton("Move", panelControls, null, this, COMMAND_MOVE);
+		createButton("Remove", panelControls, null, this, COMMAND_REMOVE);
+		createButton("Refresh", panelControls, null, this, COMMAND_REFRESH);
 		contentPane.add(panelControls, BorderLayout.SOUTH);
 
-		// Control buttons
-		btnAdd = createButton("Add", COMMAND_ADD);
-		panelControls.add(btnAdd);
+		panelProperties = new JPanel();
+		contentPane.add(panelProperties, BorderLayout.NORTH);
+		panelProperties.setLayout(new FormLayout(new ColumnSpec[] { FormFactory.RELATED_GAP_COLSPEC,
+				FormFactory.DEFAULT_COLSPEC, FormFactory.RELATED_GAP_COLSPEC, FormFactory.DEFAULT_COLSPEC,
+				FormFactory.RELATED_GAP_COLSPEC, ColumnSpec.decode("default:grow"), }, new RowSpec[] {
+				FormFactory.RELATED_GAP_ROWSPEC, RowSpec.decode("default:grow"), FormFactory.RELATED_GAP_ROWSPEC,
+				RowSpec.decode("default:grow"), FormFactory.RELATED_GAP_ROWSPEC, }));
 
-		btnEdit = createButton("Edit", COMMAND_EDIT);
-		panelControls.add(btnEdit);
+		// Properties
+		int maximumFrame = textures.getMaximumFrame();
 
-		btnMove = createButton("Move", COMMAND_MOVE);
-		panelControls.add(btnMove);
+		createLabel("Current Frame", panelProperties, "2, 2, center, default");
+		spinnerFrame = createSpinner(new SpinnerNumberModel(textures.getCurrentFrame(), 0, null, 1), panelProperties,
+				"4, 2, fill, default", this);
 
-		btnRemove = createButton("Remove", COMMAND_REMOVE);
-		panelControls.add(btnRemove);
+		createLabel("Maximum Frame", panelProperties, "2, 4, center, default");
 
-		btnRefresh = createButton("Refresh", COMMAND_REFRESH);
-		panelControls.add(btnRefresh);
+		textMaximum = new JTextField();
+		textMaximum.setEnabled(false);
+		textMaximum.setText(Integer.toString(maximumFrame));
+		panelProperties.add(textMaximum, "4, 4, fill, default");
+		textMaximum.setColumns(10);
+
+		// Jump Buttons
+
+		panelJump = new JPanel();
+		createButton("Start", panelJump, null, this, COMMAND_START);
+		createButton("End", panelJump, null, this, COMMAND_END);
+		panelProperties.add(panelJump, "6, 2, fill, fill");
 
 		tableMappings = new JTable();
 		tableMappings.addMouseListener(new MouseAdapter() {
@@ -105,31 +148,15 @@ public class TextureMappingsFrame extends JFrame implements ActionListener, Text
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String command = e.getActionCommand();
-		if (command == COMMAND_ADD) {
-			// Object[] options = { "Standard Projector", "Flat Screen", "Cuboid Screen" };
-			// int result = JOptionPane.showOptionDialog(UniverseFrame.this, "What type of object should be added?",
-			// "Add Object", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options,
-			// "Standard Projector");
-			// switch (result) {
-			// case 0:
-			// controller.create(StandardProjector.class);
-			// break;
-			// case 1:
-			// controller.create(FlatScreen.class);
-			// break;
-			// case 2:
-			// controller.create(CuboidScreen.class);
-			// break;
-			// default:
-			// return;
-			// }
-		} else if (command.equals(COMMAND_EDIT) || command.equals(COMMAND_MOVE) || command.equals(COMMAND_REMOVE)) {
+		if (command == COMMAND_ADD)
+			controller.create(this);
+		else if (command.equals(COMMAND_EDIT) || command.equals(COMMAND_MOVE) || command.equals(COMMAND_REMOVE)) {
 			int index = tableMappings.getSelectedRow();
 			TextureMapping m = ((MappingsTableModel) tableMappings.getModel()).getMapping(index);
 			if (command.equals(COMMAND_EDIT))
 				controller.edit(m.getTexture());
 			else if (command.equals(COMMAND_MOVE))
-				controller.move(m);
+				controller.move(this, m);
 			else {
 				boolean confirmed = JOptionPane.showConfirmDialog(
 						this,
@@ -139,20 +166,31 @@ public class TextureMappingsFrame extends JFrame implements ActionListener, Text
 				if (confirmed)
 					controller.remove(m.getFace());
 			}
-
 		} else if (command.equals(COMMAND_REFRESH))
 			bind();
+		else if (command.equals(COMMAND_START))
+			textures.setCurrentFrame(0);
+		else if (command.equals(COMMAND_END))
+			textures.setCurrentFrame(textures.getMaximumFrame() - 1);
 	}
 
 	private void bind() {
+		live = false;
+
+		int maximumFrame = textures.getMaximumFrame();
+		SpinnerNumberModel model = (SpinnerNumberModel) spinnerFrame.getModel();
+		model.setValue(textures.getCurrentFrame() % maximumFrame);
+		textMaximum.setText(Integer.toString(maximumFrame));
+
 		MappingsTableModel.useModel(tableMappings, new ArrayList<>(textures.getTextureMappings()));
+
+		live = true;
 	}
 
-	private JButton createButton(String text, String command) {
-		JButton button = new JButton(text);
-		button.setActionCommand(command);
-		button.addActionListener(this);
-		return button;
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		if (live)
+			textures.setCurrentFrame(getSpinnerValue(spinnerFrame).intValue());
 	}
 
 	@Override
@@ -162,6 +200,8 @@ public class TextureMappingsFrame extends JFrame implements ActionListener, Text
 
 	@Override
 	public void textureFrameChange(int current, int old) {
-		bind();
+		live = false;
+		spinnerFrame.setValue(current);
+		live = true;
 	}
 }
