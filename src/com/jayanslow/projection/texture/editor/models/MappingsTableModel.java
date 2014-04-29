@@ -11,10 +11,9 @@ import javax.swing.table.TableColumn;
 import com.jayanslow.projection.texture.models.ColorImageTexture;
 import com.jayanslow.projection.texture.models.DirectoryVideoTexture;
 import com.jayanslow.projection.texture.models.FileImageTexture;
-import com.jayanslow.projection.texture.models.ImageTexture;
 import com.jayanslow.projection.texture.models.Texture;
 import com.jayanslow.projection.texture.models.TextureMapping;
-import com.jayanslow.projection.texture.models.VideoTexture;
+import com.jayanslow.projection.texture.models.TextureType;
 
 public class MappingsTableModel extends AbstractTableModel {
 
@@ -65,7 +64,7 @@ public class MappingsTableModel extends AbstractTableModel {
 		case COLUMN_FACE_NAME:
 			return String.class;
 		case COLUMN_TEXTURE_TYPE:
-			return String.class;
+			return TextureType.class;
 		case COLUMN_TEXTURE_INFO:
 			return Object.class;
 		default:
@@ -118,32 +117,25 @@ public class MappingsTableModel extends AbstractTableModel {
 			String name = m.getFace().getName();
 			return name == null ? "" : name;
 		case COLUMN_TEXTURE_TYPE:
-			if (t.isImageTexture())
-				return ((ImageTexture) t).getImageTextureType();
-			else
-				return ((VideoTexture) t).getVideoTextureType();
+			return t.getTextureType();
 		case COLUMN_TEXTURE_INFO:
-			if (t.isImageTexture())
-				switch (((ImageTexture) t).getImageTextureType()) {
-				case FILE:
-					return ((FileImageTexture) t).getFile().getPath();
-				case BUFFERED:
-					return null;
-				case COLOR:
-					Color c = ((ColorImageTexture) t).getColor();
-					return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue()).toUpperCase();
-				default:
-					throw new RuntimeException("Unknown ImageTextureType in MappingsTableModel");
-				}
-			else
-				switch (((VideoTexture) t).getVideoTextureType()) {
-				case DIRECTORY:
-					return ((DirectoryVideoTexture) t).getDirectory().getPath();
-				case LIST:
-					return String.format("%d images", t.getNumberOfFrames());
-				default:
-					throw new RuntimeException("Unknown VideoTextureType in MappingsTableModel");
-				}
+			switch (t.getTextureType()) {
+			case FILE:
+				return ((FileImageTexture) t).getFile().getPath();
+			case BUFFERED:
+				return null;
+			case COLOR:
+				Color c = ((ColorImageTexture) t).getColor();
+				return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue()).toUpperCase();
+			case DIRECTORY:
+				return ((DirectoryVideoTexture) t).getDirectory().getPath();
+			case LIST:
+				return String.format("%d images", t.getNumberOfFrames());
+			case PREVIEW:
+				return null;
+			default:
+				throw new RuntimeException("Unknown TextureType in MappingsTableModel");
+			}
 		default:
 			throw new IllegalArgumentException("Column out of range");
 		}
