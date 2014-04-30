@@ -3,12 +3,14 @@ package com.jayanslow.projection.texture.editor.controller;
 import java.awt.Color;
 import java.awt.Frame;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.jayanslow.projection.texture.controllers.TextureController;
 import com.jayanslow.projection.texture.editor.views.BufferedImageTextureFrame;
 import com.jayanslow.projection.texture.editor.views.ColorImageTextureFrame;
+import com.jayanslow.projection.texture.editor.views.DirectoryVideoTextureFrame;
 import com.jayanslow.projection.texture.editor.views.FaceDialog;
 import com.jayanslow.projection.texture.editor.views.FileImageTextureFrame;
 import com.jayanslow.projection.texture.editor.views.ListVideoTextureFrame;
@@ -17,7 +19,9 @@ import com.jayanslow.projection.texture.editor.views.TextureTypeDialog;
 import com.jayanslow.projection.texture.listeners.TextureListener;
 import com.jayanslow.projection.texture.models.BufferedImageTexture;
 import com.jayanslow.projection.texture.models.ColorImageTexture;
+import com.jayanslow.projection.texture.models.DirectoryVideoTexture;
 import com.jayanslow.projection.texture.models.FileImageTexture;
+import com.jayanslow.projection.texture.models.ImageTexture;
 import com.jayanslow.projection.texture.models.ListVideoTexture;
 import com.jayanslow.projection.texture.models.PreviewTexture;
 import com.jayanslow.projection.texture.models.Texture;
@@ -85,10 +89,16 @@ public class StandardTextureEditorController implements TextureEditorController 
 			texture = new FileImageTexture(file);
 			break;
 		case DIRECTORY:
-			throw new UnsupportedOperationException();
+			File dir = JFileChooserHelpers.chooseDirectory(null, null);
+			if (dir == null)
+				return null;
+			texture = new DirectoryVideoTexture(dir);
+			break;
+		case LIST:
+			texture = new ListVideoTexture(new ArrayList<ImageTexture>());
+			break;
 		case PREVIEW:
 		case BUFFERED:
-		case LIST:
 		default:
 			throw new UnsupportedOperationException();
 		}
@@ -108,6 +118,7 @@ public class StandardTextureEditorController implements TextureEditorController 
 			showFrame(new BufferedImageTextureFrame(this, (BufferedImageTexture) t));
 			break;
 		case DIRECTORY:
+			showFrame(new DirectoryVideoTextureFrame(this, (DirectoryVideoTexture) t));
 			break;
 		case LIST:
 			showFrame(new ListVideoTextureFrame(this, (ListVideoTexture) t));
