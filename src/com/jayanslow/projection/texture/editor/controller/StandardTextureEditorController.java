@@ -11,12 +11,14 @@ import com.jayanslow.projection.texture.editor.views.BufferedImageTextureFrame;
 import com.jayanslow.projection.texture.editor.views.ColorImageTextureFrame;
 import com.jayanslow.projection.texture.editor.views.FaceDialog;
 import com.jayanslow.projection.texture.editor.views.FileImageTextureFrame;
+import com.jayanslow.projection.texture.editor.views.ListVideoTextureFrame;
 import com.jayanslow.projection.texture.editor.views.TextureMappingsFrame;
 import com.jayanslow.projection.texture.editor.views.TextureTypeDialog;
 import com.jayanslow.projection.texture.listeners.TextureListener;
 import com.jayanslow.projection.texture.models.BufferedImageTexture;
 import com.jayanslow.projection.texture.models.ColorImageTexture;
 import com.jayanslow.projection.texture.models.FileImageTexture;
+import com.jayanslow.projection.texture.models.ListVideoTexture;
 import com.jayanslow.projection.texture.models.PreviewTexture;
 import com.jayanslow.projection.texture.models.Texture;
 import com.jayanslow.projection.texture.models.TextureMapping;
@@ -108,6 +110,7 @@ public class StandardTextureEditorController implements TextureEditorController 
 		case DIRECTORY:
 			break;
 		case LIST:
+			showFrame(new ListVideoTextureFrame(this, (ListVideoTexture) t));
 			break;
 		case PREVIEW:
 			((PreviewTexture) t).restore();
