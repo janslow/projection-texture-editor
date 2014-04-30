@@ -35,8 +35,8 @@ public class TextureTypeDialog extends JDialog implements ActionListener {
 	private static final String	COMMAND_OK				= "ok";
 	private static final String	COMMAND_CANCEL			= "cancel";
 
-	public static TextureType selectTextureType(Frame owner) {
-		TextureTypeDialog dialog = new TextureTypeDialog(owner);
+	public static TextureType selectTextureType(Frame owner, boolean imageOnly) {
+		TextureTypeDialog dialog = new TextureTypeDialog(owner, imageOnly);
 		dialog.setVisible(true);
 		if (dialog.isCancelled())
 			return null;
@@ -49,10 +49,7 @@ public class TextureTypeDialog extends JDialog implements ActionListener {
 
 	private boolean				cancelled		= true;
 
-	/**
-	 * Create the dialog.
-	 */
-	public TextureTypeDialog(Frame owner) {
+	public TextureTypeDialog(Frame owner, boolean imageOnly) {
 		super(owner, true);
 
 		setBounds(100, 100, 450, 300);
@@ -69,9 +66,9 @@ public class TextureTypeDialog extends JDialog implements ActionListener {
 		contentPanel.add(panelTypeFilters, "2, 2, 3, 1, left, fill");
 		ButtonGroup group = new ButtonGroup();
 
-		createRadioButton(panelTypeFilters, group, "Image", COMMAND_FILTER_IMAGE);
-		createRadioButton(panelTypeFilters, group, "Video", COMMAND_FILTER_VIDEO);
-		createRadioButton(panelTypeFilters, group, "Both", COMMAND_FILTER_BOTH).setSelected(true);
+		JRadioButton radioImage = createRadioButton(panelTypeFilters, group, "Image", COMMAND_FILTER_IMAGE);
+		JRadioButton radioVideo = createRadioButton(panelTypeFilters, group, "Video", COMMAND_FILTER_VIDEO);
+		JRadioButton radioBoth = createRadioButton(panelTypeFilters, group, "Both", COMMAND_FILTER_BOTH);
 
 		listTypes = new JList<>(new TextureTypeListModel());
 		listTypes.addMouseListener(new MouseAdapter() {
@@ -105,6 +102,14 @@ public class TextureTypeDialog extends JDialog implements ActionListener {
 		JButton okButton = createButton("OK", panelButton, null, this, COMMAND_OK);
 		getRootPane().setDefaultButton(okButton);
 		createButton("Cancel", panelButton, null, this, COMMAND_CANCEL);
+
+		if (imageOnly) {
+			radioImage.setSelected(true);
+			radioVideo.setEnabled(false);
+			radioBoth.setEnabled(false);
+			getModel().filter(true);
+		} else
+			radioBoth.setSelected(true);
 	}
 
 	@Override

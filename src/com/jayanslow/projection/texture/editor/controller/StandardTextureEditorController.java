@@ -34,6 +34,18 @@ public class StandardTextureEditorController implements TextureEditorController 
 		super();
 		this.world = world;
 		this.textures = textures;
+		textures.addTextureListener(new TextureListener() {
+			@Override
+			public void textureChange(Texture texture) {
+				fireTextureChange(texture);
+			}
+
+			@Override
+			public void textureFrameChange(int current, int old) {
+				fireTextureFrameChange(current, old);
+			}
+
+		});
 	}
 
 	@Override
@@ -43,30 +55,11 @@ public class StandardTextureEditorController implements TextureEditorController 
 
 	@Override
 	public <T extends Texture> void create(Face face, TextureType type) {
-		Texture texture;
-		Frame frame;
-		switch (type) {
-		case COLOR:
-			texture = new ColorImageTexture(Color.BLACK);
-			frame = new ColorImageTextureFrame(this, (ColorImageTexture) texture);
-			break;
-		case FILE:
-			File file = JFileChooserHelpers.chooseImageFile(null, null);
-			if (file == null)
-				return;
-			texture = new FileImageTexture(file);
-			frame = new FileImageTextureFrame(this, (FileImageTexture) texture);
-			break;
-		case DIRECTORY:
-		case LIST:
-			throw new UnsupportedOperationException();
-		case PREVIEW:
-		case BUFFERED:
-		default:
-			throw new UnsupportedOperationException();
-		}
+		Texture texture = create(type);
+		if (type == null)
+			return;
 		textures.putTexture(face, texture);
-		showFrame(frame);
+		edit(texture);
 	}
 
 	@Override
@@ -74,6 +67,30 @@ public class StandardTextureEditorController implements TextureEditorController 
 		TextureType type = selectTextureType(parent);
 		Face face = selectFace(parent);
 		create(face, type);
+	}
+
+	@Override
+	public Texture create(TextureType type) {
+		Texture texture;
+		switch (type) {
+		case COLOR:
+			texture = new ColorImageTexture(Color.BLACK);
+			break;
+		case FILE:
+			File file = JFileChooserHelpers.chooseImageFile(null, null);
+			if (file == null)
+				return null;
+			texture = new FileImageTexture(file);
+			break;
+		case DIRECTORY:
+			throw new UnsupportedOperationException();
+		case PREVIEW:
+		case BUFFERED:
+		case LIST:
+		default:
+			throw new UnsupportedOperationException();
+		}
+		return texture;
 	}
 
 	@Override
@@ -108,6 +125,18 @@ public class StandardTextureEditorController implements TextureEditorController 
 		addTextureListener(frame);
 	}
 
+	protected void fireTextureChange(Texture texture) {
+		for (TextureListener l : listeners)
+			if (l != null)
+				l.textureChange(texture);
+	}
+
+	protected void fireTextureFrameChange(int current, int old) {
+		for (TextureListener l : listeners)
+			if (l != null)
+				l.textureFrameChange(current, old);
+	}
+
 	@Override
 	public TextureController getTextureController() {
 		return textures;
@@ -132,30 +161,20 @@ public class StandardTextureEditorController implements TextureEditorController 
 		textures.remove(f);
 	}
 
-	private Face selectFace(Frame parent) {
+	protected Face selectFace(Frame parent) {
 		return FaceDialog.selectFace(parent, world, textures);
 	}
 
-	private TextureType selectTextureType(Frame parent) {
-		return TextureTypeDialog.selectTextureType(parent);
+	protected TextureType selectTextureType(Frame parent) {
+		return selectTextureType(parent, false);
+	}
+
+	protected TextureType selectTextureType(Frame parent, boolean imageOnly) {
+		return TextureTypeDialog.selectTextureType(parent, imageOnly);
 	}
 
 	private void showFrame(Frame frame) {
 		frame.setVisible(true);
-	}
-
-	@Override
-	public void textureChange(Texture texture) {
-		for (TextureListener l : listeners)
-			if (l != null)
-				l.textureChange(texture);
-	}
-
-	@Override
-	public void textureFrameChange(int current, int old) {
-		for (TextureListener l : listeners)
-			if (l != null)
-				l.textureFrameChange(current, old);
 	}
 
 }

@@ -10,7 +10,7 @@ import com.jayanslow.projection.texture.models.TextureType;
 import com.jayanslow.projection.world.controllers.WorldController;
 import com.jayanslow.projection.world.models.Face;
 
-public interface TextureEditorController extends TextureListener {
+public interface TextureEditorController {
 	public void addTextureListener(TextureListener l) throws NullPointerException;
 
 	/**
@@ -30,6 +30,14 @@ public interface TextureEditorController extends TextureListener {
 	 *            Parent frame to open dialogs under(can be null)
 	 */
 	public void create(Frame parent);
+
+	/**
+	 * Creates a new Texture
+	 * 
+	 * @param type
+	 *            TextureType to create
+	 */
+	public Texture create(TextureType type);
 
 	/**
 	 * Opens a frame to edit a specified texture
